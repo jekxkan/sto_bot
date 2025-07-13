@@ -1,10 +1,9 @@
-from aiogram.types import Message, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import Message
 
-from src.keyboards.inline import InlineKeyboard
-from src.main_objects.manager import BotManager
-from src.main_objects.scene import Scene
+from src.keyboards.profile_keyboard import ProfileKeyboard
+from src.classes.manager import BotManager
+from src.classes.scene import Scene
 
-inline_keyboard = InlineKeyboard()
 
 class ProfileScene(Scene):
     """
@@ -17,34 +16,29 @@ class ProfileScene(Scene):
     def __init__(self, text: str = None):
         super().__init__()
         self.text = text
+        self.inline_keyboard = ProfileKeyboard()
 
-    async def begin_scene(self, message: Message, is_auth: bool):
+
+    async def _run_certain_scene(self, message: Message, **kwargs):
         """
-        Запускаем первый этап сценария личныго кабинета: выводим данные
-        пользователя/сообщение о необходимости регистрации + соответствующие
-        inline-кнопки
+        Проверяет парамент is_auth и в зависимости
+        от его значения добавляет ту или иную клавиатуруу
 
         Args:
-            - message(Message): объект сообщения от пользователя
-            - auth(bool): аутентифицирован ли пользователь
+            - message(Message): объект сообщения
+            - **kwargs: дополнительные параметры
         """
-        await self.prepare_chat()
+        is_auth = kwargs.get('is_auth', False)
+        buttons = self.inline_keyboard.create_profile_keyboard() if is_auth \
+            else self.inline_keyboard.create_unauth_profile_keyboard()
 
-        await message.answer(self.text, reply_markup=self.reply_keyboard)
-
-        buttons = InlineKeyboardMarkup(
-            inline_keyboard=inline_keyboard.create_profile_buttons()
-            if is_auth
-            else inline_keyboard.create_unauth_profile_buttons()
-        )
-
-        BotManager.last_msg = await message.answer(
+        BotManager.last_bot_msg = await message.answer(
             'Выберите действие:',
             reply_markup=buttons
         )
 
 
-    async def ask_new_email(self, callback: CallbackQuery):
+    async def ask_new_email(self, message: Message):
         """
         Запрашиваем новую почту, используется в сценарии профиля при нажатии
         кнопки "Изменить адрес электронной почты"(change_email)
@@ -52,13 +46,11 @@ class ProfileScene(Scene):
         Args:
             - callback(CallbackQuery): информация о нажатой кнопке
         """
-        await self.prepare_chat()
-        buttons = InlineKeyboardMarkup(
-            inline_keyboard=inline_keyboard.create_change_email_buttons()
-        )
-        BotManager.last_msg = await callback.message.answer(
+        await self.transition.remove_inline_keyboard_last_msg()
+
+        BotManager.last_bot_msg = await message.answer(
             "Введите новый адрес электронной почты:",
-            reply_markup=buttons
+            reply_markup=self.inline_keyboard.create_change_email_keyboard()
         )
 
 
@@ -73,18 +65,12 @@ class ProfileScene(Scene):
             - message(Message): объект сообщения от пользователя
             - new_email(str): новый email пользователя
         """
-        await self.prepare_chat()
+        await self.transition.remove_inline_keyboard_last_msg()
         await BotManager.user.change_email(new_email)
-        BotManager.last_msg = await message.answer(
+        BotManager.last_bot_msg = await message.answer(
             f'Ваш электронный адрес изменен!\n\n'
-            f'{await BotManager.user.write_data()}',
+            f'{await BotManager.user.write_user_data()}',
             reply_markup=None)
 
-    async def get_username(self, message: Message):
-        pass
 
-    async def get_user_email(self, message: Message):
-        pass
-
-    async def get_user_number(self, message: Message):
-        pass
+profile = ProfileScene()

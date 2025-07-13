@@ -1,8 +1,11 @@
-from aiogram.types import Message, InlineKeyboardMarkup, FSInputFile, ReplyKeyboardRemove
+from aiogram.types import Message, FSInputFile
 
-from src.main_objects.manager import BotManager
+from src.keyboards.menu_keyboard import MenuKeyboard
+from src.classes.manager import BotManager
+from src.classes.scene import Scene
 
-class MainMenu(BotManager):
+
+class MainMenu(Scene):
     """
     Главное меню наследует метод prepare_chat и атрибуты
     класса BotManager
@@ -12,12 +15,16 @@ class MainMenu(BotManager):
         Переопределяются атрибуты picture, text и inline_keyboard
         """
         super().__init__()
-        self.picture = 'img/pic1.jpg'
+        self.picture = '../img/pic1.jpg'
         self.text = 'Добро пожаловать'
-        self.inline_keyboard = self.inline_keyboard.create_menu_buttons()
+        self.inline_keyboard = MenuKeyboard()
 
 
-    async def start(self, message: Message):
+    async def _run_certain_scene(self, message: Message, **kwargs):
+        pass
+
+
+    async def start_scene(self, message: Message, **kwargs):
         """
         Отправляет сообщение с главным меню по команде /start
 
@@ -28,12 +35,11 @@ class MainMenu(BotManager):
         Args:
             - message(Message): объект сообщения от пользователя
         """
-        buttons = InlineKeyboardMarkup(
-            inline_keyboard=self.inline_keyboard
-        )
         photo = FSInputFile(self.picture)
-        BotManager.last_msg = await message.answer_photo(
+        BotManager.last_bot_msg = await message.answer_photo(
             photo=photo,
             caption=self.text,
-            reply_markup=buttons
+            reply_markup=self.inline_keyboard.create_menu_keyboard()
         )
+
+menu = MainMenu()

@@ -3,8 +3,8 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(
-    fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    fmt='{asctime} | levelname={levelname} | {module}:{funcName}:{lineno} | {message}',
+    style='{'
 )
 
 console_handler = logging.StreamHandler()
