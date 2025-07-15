@@ -2,13 +2,13 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from src.configs.logger import logger
-from src.classes.transition import transition
-from src.states.registration import RegistrationStates
+from configs.logger import logger
+from classes.transition import transition
+from states.registration import RegistrationStates
 
 router = Router()
 
-@router.message(F.text == "Главное меню")
+@router.message(F.text == "🏠 Главная")
 async def on_main_menu_msg(message: Message, state: FSMContext):
     """
     Обработчик сообщения "Главное меню"

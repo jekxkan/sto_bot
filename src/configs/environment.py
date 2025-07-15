@@ -1,6 +1,8 @@
+from aiogram.utils.mypy_hacks import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+@lru_cache()
 class EnvironmentSettings(BaseSettings):
     bot_token: str = Field(env="BOT_TOKEN")
 

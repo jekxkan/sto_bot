@@ -1,58 +1,45 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardMarkup, InlineKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import Message, InlineKeyboardMarkup
 
-from src.keyboards.main_keyboard import MainKeyboard
-from src.keyboards.registration_keyboard import RegistrationKeyboard
-from src.classes.manager import BotManager
-from src.classes.scene import Scene
+from classes.transition import transition
+from classes.user import User
+from keyboards.main_keyboard import (create_step_back_button,
+                                     create_back_to_menu_keyboard)
+from keyboards.registration_keyboard import (create_getting_email_keyboard,
+                                             create_gettting_number_keyboard)
+from classes.manager import state_manager
+from classes.scene import Scene
 
 
 class RegistrationScene(Scene):
     def __init__(self):
         super().__init__()
         self.text = 'Поделитесь Вашим телефонным номером:'
-        self.inline_keyboard = {
-            'main': MainKeyboard(),
-            'registration': RegistrationKeyboard()
-        }
-        self.reply_keyboard = {
-            'main_menu': self.reply_keyboard,
-            'getting_number': RegistrationKeyboard().
-                              create_gettting_number_keyboard()
-        }
 
 
-    async def _run_certain_scene(self, message: Message, **kwargs):
-        """
-        Добавляет сообщение с кнопкой "Назад"
-
-        Args:
-            - message(Message): объект сообщение
-            - **kwargs: дополнительные параметры
-        """
-        BotManager.last_bot_msg = await message.answer(
-            text='Чтобы поделиться, нажмите на кнопку "Поделиться номером" внизу',
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=[[self.inline_keyboard['main'].back_button]]
-            )
-        )
-
-
-    async def start_scene(self, message: Message, **kwargs):
+    async def start_scene(self, message: Message):
         """
         Запускает сценарий регистрации - запрашивает номер телефона
 
         Args:
             - message(Message): объект сообщения
-            - **kwargs: дополнительные параметры
         """
-        await self.transition.remove_inline_keyboard_last_msg()
+        chat_id = message.chat.id
+
+        await transition.remove_inline_keyboard_last_msg(message)
         await message.answer(
             self.text,
-            reply_markup=self.reply_keyboard['getting_number']
+            reply_markup=await create_gettting_number_keyboard()
         )
 
-        await self._run_certain_scene(message, **kwargs)
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                text='Чтобы поделиться, нажмите на '
+                     'кнопку "Поделиться номером" внизу',
+                reply_markup=InlineKeyboardMarkup(
+                    inline_keyboard=[[await create_step_back_button()]]
+                )
+            )
 
 
     async def check_if_num_exists_in_1c(self, number: str):
@@ -70,7 +57,7 @@ class RegistrationScene(Scene):
             - message(Message): сообщение пользователя с контактами
             - state(FSMContext): контекст состояния
         """
-        await self.transition.remove_inline_keyboard_last_msg()
+        await transition.remove_inline_keyboard_last_msg(message)
 
         number = message.contact.phone_number
         await self.check_if_num_exists_in_1c(number)
@@ -82,7 +69,7 @@ class RegistrationScene(Scene):
 
         await message.answer(
             text=f'Ваш номер: {number}',
-            reply_markup=self.reply_keyboard['main_menu']
+            reply_markup=await create_back_to_menu_keyboard()
         )
 
 
@@ -93,11 +80,13 @@ class RegistrationScene(Scene):
         Args:
             - message(Message): объект сообщение
         """
-        BotManager.last_bot_msg = await message.answer(
-            text='Введите адрес электронной почты:',
-            reply_markup=self.inline_keyboard['registration'].
-                         create_getting_email_keyboard()
-        )
+        chat_id = message.chat.id
+
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                text='Введите адрес электронной почты:',
+                reply_markup=await create_getting_email_keyboard()
+            )
 
 
     async def get_email(self, message: Message, state: FSMContext):
@@ -110,7 +99,7 @@ class RegistrationScene(Scene):
             - message(Message): сообщение пользователя с email
             - state(FSMContext): контекст состояния FSM
         """
-        await self.transition.remove_inline_keyboard_last_msg()
+        await transition.remove_inline_keyboard_last_msg(message)
 
         email = message.text
         data = await state.get_data()
@@ -130,12 +119,15 @@ class RegistrationScene(Scene):
         Args:
             - message(Message): объект сообщения
         """
-        BotManager.last_bot_msg = await message.answer(
-            text='Укажите как к Вам обращаться: ',
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=[[self.inline_keyboard['main'].back_button]]
+        chat_id = message.chat.id
+
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                text='Укажите как к Вам обращаться: ',
+                reply_markup=InlineKeyboardMarkup(
+                    inline_keyboard=[[await create_step_back_button()]]
+                )
             )
-        )
 
 
     async def get_username(self, message: Message, state: FSMContext):
@@ -148,18 +140,30 @@ class RegistrationScene(Scene):
             - message(Message): сообщение пользователя с именем
             - state(FSMContext): контекст состояния
         """
-        await self.transition.remove_inline_keyboard_last_msg()
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+
+        await transition.remove_inline_keyboard_last_msg(message)
 
         username = message.text
         data = await state.get_data()
         registration_data = data.get('registration_data', {})
         registration_data['username'] = username
         await state.update_data(registration_data=registration_data)
-        BotManager.user.data.update(registration_data)
 
-        BotManager.last_bot_msg = await message.answer(
-            text=f'Спасибо, что зарегистрировались!\n\n'
-                 f'{await BotManager.user.write_user_data()}'
-        )
+        email = registration_data.get('email', None)
+
+        state_manager.users[user_id] = User()
+        state_manager.users[user_id].data = {
+            'username': username,
+            'email': email,
+            'number': registration_data['number'],
+        }
+
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                text=f'Спасибо, что зарегистрировались!\n\n'
+                     f'{await state_manager.users[user_id].write_user_data()}'
+            )
 
 registration_scene = RegistrationScene()

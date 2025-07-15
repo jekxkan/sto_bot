@@ -3,8 +3,8 @@ from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-from src.configs.logger import logger
-from src.classes.scenes.menu_scene import menu
+from configs.logger import logger
+from classes.scenes.menu_scene import menu
 
 menu_router = Router()
 

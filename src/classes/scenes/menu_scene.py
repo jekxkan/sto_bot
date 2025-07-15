@@ -1,8 +1,8 @@
 from aiogram.types import Message, FSInputFile
 
-from src.keyboards.menu_keyboard import MenuKeyboard
-from src.classes.manager import BotManager
-from src.classes.scene import Scene
+from keyboards.menu_keyboard import create_menu_keyboard
+from classes.manager import state_manager
+from classes.scene import Scene
 
 
 class MainMenu(Scene):
@@ -15,16 +15,23 @@ class MainMenu(Scene):
         Переопределяются атрибуты picture, text и inline_keyboard
         """
         super().__init__()
-        self.picture = '../img/pic1.jpg'
-        self.text = 'Добро пожаловать'
-        self.inline_keyboard = MenuKeyboard()
+        self.picture = '../img/menu.jpg'
+        self.text = ('Запишитесь на СТО Орбита уже\nсегодня и получите '
+                     'качетсвенное\nобслуживание вашего авто!\n'
+                     'Просто выберите желаемую дату\nи время визита.\n\n'
+                     'Режим работы:\n'
+                     'Ежедневно с 9:00 до 21:00\n\n'
+                     'Телефоны:\n'
+                     '8 (812) 454-79-79\n'
+                     ' • Институтский переулок д.1\n'
+                     ' • Суздальский проспект д.32\n  корп.2\n'
+                     ' • ул.Руставели д.59 Е\n\n'
+                     '8 (812) 454-60-60\n'
+                     ' • Кожевенная линия д.29 корп.13\n'
+                     ' • ул. Маршала Говорова д.29')
 
 
-    async def _run_certain_scene(self, message: Message, **kwargs):
-        pass
-
-
-    async def start_scene(self, message: Message, **kwargs):
+    async def start_scene(self, message: Message):
         """
         Отправляет сообщение с главным меню по команде /start
 
@@ -35,11 +42,14 @@ class MainMenu(Scene):
         Args:
             - message(Message): объект сообщения от пользователя
         """
+        chat_id = message.chat.id
+
         photo = FSInputFile(self.picture)
-        BotManager.last_bot_msg = await message.answer_photo(
-            photo=photo,
-            caption=self.text,
-            reply_markup=self.inline_keyboard.create_menu_keyboard()
-        )
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer_photo(
+                photo=photo,
+                caption=self.text,
+                reply_markup=await create_menu_keyboard()
+            )
 
 menu = MainMenu()

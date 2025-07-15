@@ -3,11 +3,11 @@ from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from src.classes.transition import transition
-from src.configs.logger import logger
-from src.classes.scenes.registration_scene import registration_scene
-from src.states.profile import ProfileStates
-from src.states.registration import RegistrationStates
+from classes.transition import transition
+from configs.logger import logger
+from classes.scenes.registration_scene import registration_scene
+from states.profile import ProfileStates
+from states.registration import RegistrationStates
 
 registration_router = Router()
 

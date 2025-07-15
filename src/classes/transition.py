@@ -1,17 +1,16 @@
-import asyncio
-
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
 
-from src.configs.logger import logger
-from src.keyboards.menu_keyboard import MenuKeyboard
-from src.classes.manager import BotManager
-from src.states.profile import ProfileStates
-from src.states.registration import RegistrationStates
+from classes.scenes.menu_scene import menu
+from configs.logger import logger
+from classes.manager import state_manager
+from keyboards.menu_keyboard import create_menu_keyboard
+from states.profile import ProfileStates
+from states.registration import RegistrationStates
 
 
-class Transition(BotManager):
+class TransitionManager:
     """
     Класс отвечает за переходы между сценариями
 
@@ -32,14 +31,18 @@ class Transition(BotManager):
         }
 
 
-    async def remove_inline_keyboard_last_msg(self):
+    async def remove_inline_keyboard_last_msg(self, message: Message):
         """
         Бот перед отправкой нового сообщения очищает последнее отправленное
         от inline-кнопок
         """
         # Поверяем есть ли у последнего сообщения кнопки, елс да, то удлаяем их
-        if BotManager.last_bot_msg.reply_markup is not None:
-            await BotManager.last_bot_msg.edit_reply_markup(reply_markup=None)
+        chat_id = message.chat.id
+        user_last_bot_msg = state_manager.users_last_bot_msg.get(chat_id, None)
+
+        if user_last_bot_msg.reply_markup is not None:
+            await (state_manager.users_last_bot_msg[chat_id].
+                   edit_reply_markup(reply_markup=None))
 
 
     async def return_menu_scene(self, message: Message):
@@ -50,21 +53,24 @@ class Transition(BotManager):
         Args:
             - message(Message): объект сообщения от пользователя
         """
-        await self.remove_inline_keyboard_last_msg()
+        chat_id = message.chat.id
+
+        await self.remove_inline_keyboard_last_msg(message)
 
         # Отправляем временное  сообщение в чат, чтобы удалить reply-кнопку
-        temp_msg = await message.answer(text='Возвращаемся в главное меню',
-                             reply_markup=ReplyKeyboardRemove())
-        # Пауза 1 секунда
-        await asyncio.sleep(1)
+        temp_msg = await message.answer(
+            text='Возвращаемся в главное меню',
+            reply_markup=ReplyKeyboardRemove()
+        )
         # Удаляем временное сообщение
         await temp_msg.delete()
 
-        BotManager.last_bot_msg = await message.answer_photo(
-            caption='Добро пожаловать',
-            photo=FSInputFile('../img/pic1.jpg'),
-            reply_markup=MenuKeyboard().create_menu_keyboard()
-        )
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer_photo(
+                caption=menu.text,
+                photo=FSInputFile('../img/menu.jpg'),
+                reply_markup=await create_menu_keyboard()
+            )
 
 
     async def add_and_set_state(self, state: FSMContext, new_state: State):
@@ -101,16 +107,9 @@ class Transition(BotManager):
         Args:
            - message(Message): объект сообщения
         """
-        from src.classes.scenes.profile_scene import ProfileScene
+        from src.classes.scenes.profile_scene import profile
 
-        profile_text = await BotManager.user.write_user_data()
-        profile = ProfileScene(text=profile_text)
-        user_data = BotManager.user.data
-        if user_data:
-            is_auth = True
-        else:
-            is_auth = False
-        await profile.start_scene(message, is_auth=is_auth)
+        await profile.start_scene(message)
 
 
     async def handle_start_registration(self, message: Message):
@@ -139,7 +138,7 @@ class Transition(BotManager):
         """
         from src.classes.scenes.registration_scene import registration_scene
 
-        await self.remove_inline_keyboard_last_msg()
+        await self.remove_inline_keyboard_last_msg(message)
         await registration_scene.ask_email(message)
 
 
@@ -154,8 +153,8 @@ class Transition(BotManager):
         """
         from src.classes.scenes.registration_scene import registration_scene
 
-        await self.remove_inline_keyboard_last_msg()
+        await self.remove_inline_keyboard_last_msg(message)
         await registration_scene.ask_username(message)
 
 
-transition = Transition()
+transition = TransitionManager()

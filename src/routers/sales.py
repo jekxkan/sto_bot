@@ -2,11 +2,10 @@ from aiogram import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from src.classes.transition import transition
-from src.configs.logger import logger
-from src.classes.manager import BotManager
-from src.classes.scenes.sales_scene import sales
-from src.states.sales import SalesStates
+from classes.transition import transition
+from configs.logger import logger
+from classes.scenes.sales_scene import sales
+from states.sales import SalesStates
 
 sales_router = Router()
 
@@ -42,5 +41,5 @@ async def on_page_callback(callback: CallbackQuery):
         - callback(CallbackQuery): объект callback-запроса
     """
     page = int(callback.data.split("_")[1])
-    await sales.get_next_sale(page)
+    await sales.get_next_sale(callback.message, page)
     await callback.answer()

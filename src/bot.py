@@ -2,13 +2,13 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 
-from src.configs.environment import settings
-from src.configs.logger import logger
-from src.routers.main import router
-from src.routers.menu import menu_router
-from src.routers.profile import profile_router
-from src.routers.registration import registration_router
-from src.routers.sales import sales_router
+from configs.environment import settings
+from configs.logger import logger
+from routers.main import router
+from routers.menu import menu_router
+from routers.profile import profile_router
+from routers.registration import registration_router
+from routers.sales import sales_router
 
 API_TOKEN = settings.bot_token
 

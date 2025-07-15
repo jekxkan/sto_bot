@@ -1,8 +1,12 @@
 from aiogram.types import Message
 
-from src.keyboards.profile_keyboard import ProfileKeyboard
-from src.classes.manager import BotManager
-from src.classes.scene import Scene
+from classes.transition import transition
+from keyboards.main_keyboard import create_back_to_menu_keyboard
+from keyboards.profile_keyboard import (create_profile_keyboard,
+                                        create_unauth_profile_keyboard,
+                                        create_change_email_keyboard)
+from classes.manager import state_manager
+from classes.scene import Scene
 
 
 class ProfileScene(Scene):
@@ -13,29 +17,39 @@ class ProfileScene(Scene):
     сообщение пользователю ботом в BotManager.last_msg
     для отслеживания состояния чата
     """
-    def __init__(self, text: str = None):
+    def __init__(self):
         super().__init__()
-        self.text = text
-        self.inline_keyboard = ProfileKeyboard()
 
 
-    async def _run_certain_scene(self, message: Message, **kwargs):
-        """
-        Проверяет парамент is_auth и в зависимости
-        от его значения добавляет ту или иную клавиатуруу
+    async def start_scene(self, message: Message):
+        chat_id = message.chat.id
 
-        Args:
-            - message(Message): объект сообщения
-            - **kwargs: дополнительные параметры
-        """
-        is_auth = kwargs.get('is_auth', False)
-        buttons = self.inline_keyboard.create_profile_keyboard() if is_auth \
-            else self.inline_keyboard.create_unauth_profile_keyboard()
+        user_id = message.from_user.id
+        user = state_manager.users.get(user_id, None)
 
-        BotManager.last_bot_msg = await message.answer(
-            'Выберите действие:',
-            reply_markup=buttons
+        if user:
+            profile_text = await user.write_user_data()
+            self.text = profile_text
+            is_auth = True
+        else:
+            profile_text = 'Вы еще не зарегистрированы в нашей системе'
+            self.text = profile_text
+            is_auth = False
+
+        await transition.remove_inline_keyboard_last_msg(message)
+        await message.answer(
+            self.text,
+            reply_markup=await create_back_to_menu_keyboard(),
         )
+
+        buttons = await create_profile_keyboard() if is_auth \
+            else await create_unauth_profile_keyboard()
+
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                'Выберите действие:',
+                reply_markup=buttons
+            )
 
 
     async def ask_new_email(self, message: Message):
@@ -46,12 +60,14 @@ class ProfileScene(Scene):
         Args:
             - callback(CallbackQuery): информация о нажатой кнопке
         """
-        await self.transition.remove_inline_keyboard_last_msg()
+        chat_id = message.chat.id
+        await transition.remove_inline_keyboard_last_msg(message)
 
-        BotManager.last_bot_msg = await message.answer(
-            "Введите новый адрес электронной почты:",
-            reply_markup=self.inline_keyboard.create_change_email_keyboard()
-        )
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                "Введите новый адрес электронной почты:",
+                reply_markup=await create_change_email_keyboard()
+            )
 
 
     async def confirm_new_email(self, message: Message,  new_email: str):
@@ -65,12 +81,17 @@ class ProfileScene(Scene):
             - message(Message): объект сообщения от пользователя
             - new_email(str): новый email пользователя
         """
-        await self.transition.remove_inline_keyboard_last_msg()
-        await BotManager.user.change_email(new_email)
-        BotManager.last_bot_msg = await message.answer(
-            f'Ваш электронный адрес изменен!\n\n'
-            f'{await BotManager.user.write_user_data()}',
-            reply_markup=None)
+        chat_id = message.chat.id
+
+        await transition.remove_inline_keyboard_last_msg(message)
+        await (state_manager.users[chat_id].
+               change_email(new_email))
+        state_manager.users_last_bot_msg[chat_id] = \
+            await message.answer(
+                f'Ваш электронный адрес изменен!\n\n'
+                f'{await state_manager.users[chat_id].write_user_data()}',
+                reply_markup=None
+            )
 
 
 profile = ProfileScene()

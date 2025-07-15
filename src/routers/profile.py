@@ -3,17 +3,17 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from src.classes.transition import transition
-from src.configs.logger import logger
-from src.classes.manager import BotManager
-from src.classes.scenes.profile_scene import ProfileScene, profile
-from src.states.profile import ProfileStates, AuthStates
+from classes.transition import transition
+from configs.logger import logger
+from classes.manager import state_manager
+from classes.scenes.profile_scene import profile
+from states.profile import ProfileStates, AuthStates
 
 
 profile_router = Router()
 
 @profile_router.callback_query(lambda x: x.data == "profile")
-async def on_profile_callback(callback_query: CallbackQuery, state: FSMContext):
+async def on_profile_callback(callback: CallbackQuery, state: FSMContext):
     """
     Обработчик callback-запроса "profile"
     Достает данные пользователя, переводит в состояние
@@ -27,20 +27,20 @@ async def on_profile_callback(callback_query: CallbackQuery, state: FSMContext):
         - state(FSMContext): контекст состояния
     """
     logger.info('Пользователь запустил сценарий личного кабинета')
-    user_data = BotManager.user.data
-    profile = ProfileScene(text=await BotManager.user.write_user_data())
+
+    user_data = state_manager.users.get(callback.from_user.id, None)
     if user_data:
         await transition.add_and_set_state(state, ProfileStates.authenticated)
         logger.info('Состояние: authenticated')
 
-        await profile.start_scene(callback_query.message, is_auth=True)
+        await profile.start_scene(callback.message)
 
     else:
         await transition.add_and_set_state(state,
                                            ProfileStates.unauthenticated)
         logger.info('Состояние: unauthenticated')
 
-        await profile.start_scene(callback_query.message, is_auth=False)
+        await profile.start_scene(callback.message)
 
 
 @profile_router.callback_query(lambda x: x.data == "change_email",
