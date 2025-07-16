@@ -30,7 +30,6 @@ class ProfileScene(Scene):
         Args:
            - message(Message): объект сообщения от бота
         """
-
         chat_id = message.chat.id
         user = state_manager.users.get(chat_id, None)
 

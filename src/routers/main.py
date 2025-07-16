@@ -86,7 +86,7 @@ async def on_next_step_callback(callback: CallbackQuery, state: FSMContext):
 
         handler = transition.next_state_command.get(current_state)
         if handler:
-            await handler(callback.message, state)
+            await handler(callback.message)
         else:
             logger.warning(f"Нет обработчика для состояния {current_state}")
             await transition.return_menu_scene(callback.message)

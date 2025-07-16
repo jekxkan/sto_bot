@@ -111,7 +111,7 @@ class TransitionManager:
         Args:
            - message(Message): объект сообщения от бота
         """
-        from src.classes.scenes.profile_scene import profile
+        from classes.scenes.profile_scene import profile
 
         await profile.start_scene(message)
 
@@ -125,7 +125,7 @@ class TransitionManager:
         Args:
            - message(Message): объект сообщения от бота
         """
-        from src.classes.scenes.registration_scene import registration_scene
+        from classes.scenes.registration_scene import registration_scene
 
         await registration_scene.start_scene(message)
 
@@ -140,7 +140,7 @@ class TransitionManager:
         Args:
            - message(Message): объект сообщения от бота
         """
-        from src.classes.scenes.registration_scene import registration_scene
+        from classes.scenes.registration_scene import registration_scene
 
         await self.remove_inline_keyboard_last_msg(message)
         await registration_scene.ask_email(message)
@@ -155,7 +155,7 @@ class TransitionManager:
         Args:
            - message(Message): объект сообщения от бота
         """
-        from src.classes.scenes.registration_scene import registration_scene
+        from classes.scenes.registration_scene import registration_scene
 
         await self.remove_inline_keyboard_last_msg(message)
         await registration_scene.ask_username(message)
