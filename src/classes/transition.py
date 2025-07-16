@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
@@ -36,7 +38,7 @@ class TransitionManager:
         Бот перед отправкой нового сообщения очищает последнее отправленное
         от inline-кнопок
         """
-        # Поверяем есть ли у последнего сообщения кнопки, елс да, то удлаяем их
+        # Поверяем есть ли у последнего сообщения кнопки, если да, то удаляем их
         chat_id = message.chat.id
         user_last_bot_msg = state_manager.users_last_bot_msg.get(chat_id, None)
 
@@ -51,7 +53,7 @@ class TransitionManager:
         по reply-кнопке
 
         Args:
-            - message(Message): объект сообщения от пользователя
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 
@@ -68,7 +70,9 @@ class TransitionManager:
         state_manager.users_last_bot_msg[chat_id] = \
             await message.answer_photo(
                 caption=menu.text,
-                photo=FSInputFile('../img/menu.jpg'),
+                photo=FSInputFile(str(
+                    (Path(__file__).parent / '..' / '..' /
+                     'img' / 'menu.jpg').resolve())),
                 reply_markup=await create_menu_keyboard()
             )
 
@@ -105,7 +109,7 @@ class TransitionManager:
         Отображает профиль в зависимости от значения is_auth
 
         Args:
-           - message(Message): объект сообщения
+           - message(Message): объект сообщения от бота
         """
         from src.classes.scenes.profile_scene import profile
 
@@ -119,7 +123,7 @@ class TransitionManager:
         Запускает сценарий регистрации - запрашивает номер телефона
 
         Args:
-           - message(Message): объект сообщения
+           - message(Message): объект сообщения от бота
         """
         from src.classes.scenes.registration_scene import registration_scene
 
@@ -134,7 +138,7 @@ class TransitionManager:
         и запрашивает у пользователя email
 
         Args:
-           - message(Message): объект сообщения
+           - message(Message): объект сообщения от бота
         """
         from src.classes.scenes.registration_scene import registration_scene
 
@@ -142,14 +146,14 @@ class TransitionManager:
         await registration_scene.ask_email(message)
 
 
-    async def handle_asking_username(self, message: Message, state: FSMContext):
+    async def handle_asking_username(self, message: Message):
         """
         Обработчик для пропуска состояния RegistrationStates.sending_email
         перехода в состояние RegistrationStates.getting_username
         Запрашивает имя пользователя и получает его
 
         Args:
-           - message(Message): объект сообщения
+           - message(Message): объект сообщения от бота
         """
         from src.classes.scenes.registration_scene import registration_scene
 

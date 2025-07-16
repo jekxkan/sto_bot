@@ -98,6 +98,16 @@ async def on_next_step_callback(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+@router.callback_query(lambda x: x.data == "sing_up" or x.data == "repair")
+async def on_unrealized_callback(callback: CallbackQuery):
+    """
+    Обработчик-заглушка для нереализованных разделов
+    """
+    await callback.answer(
+        text='В разработке'
+    )
+
+
 @router.callback_query(lambda x: x.data == 'ignore')
 async def on_ignore_callback(callback: CallbackQuery):
     """

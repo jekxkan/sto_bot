@@ -22,7 +22,7 @@ class RegistrationScene(Scene):
         Запускает сценарий регистрации - запрашивает номер телефона
 
         Args:
-            - message(Message): объект сообщения
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 
@@ -78,7 +78,7 @@ class RegistrationScene(Scene):
         Запрашивает у пользователя адрес эл. почты
 
         Args:
-            - message(Message): объект сообщение
+            - message(Message): объект сообщение от бота
         """
         chat_id = message.chat.id
 
@@ -117,7 +117,7 @@ class RegistrationScene(Scene):
         Запрашивает у пользователя имя
 
         Args:
-            - message(Message): объект сообщения
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 
@@ -140,7 +140,6 @@ class RegistrationScene(Scene):
             - message(Message): сообщение пользователя с именем
             - state(FSMContext): контекст состояния
         """
-        user_id = message.from_user.id
         chat_id = message.chat.id
 
         await transition.remove_inline_keyboard_last_msg(message)
@@ -153,8 +152,8 @@ class RegistrationScene(Scene):
 
         email = registration_data.get('email', None)
 
-        state_manager.users[user_id] = User()
-        state_manager.users[user_id].data = {
+        state_manager.users[chat_id] = User()
+        state_manager.users[chat_id].data = {
             'username': username,
             'email': email,
             'number': registration_data['number'],
@@ -163,7 +162,7 @@ class RegistrationScene(Scene):
         state_manager.users_last_bot_msg[chat_id] = \
             await message.answer(
                 text=f'Спасибо, что зарегистрировались!\n\n'
-                     f'{await state_manager.users[user_id].write_user_data()}'
+                     f'{await state_manager.users[chat_id].write_user_data()}'
             )
 
 registration_scene = RegistrationScene()

@@ -14,18 +14,25 @@ class ProfileScene(Scene):
     Класс для сценария перехода в личный кабинет
 
     При вызове любого из методов мы записываем последнее отправленное
-    сообщение пользователю ботом в BotManager.last_msg
-    для отслеживания состояния чата
+    сообщение пользователю ботом в StateManager.users_last_msg
+    по id чата для отслеживания его состояния
     """
     def __init__(self):
         super().__init__()
 
 
     async def start_scene(self, message: Message):
-        chat_id = message.chat.id
+        """
+        Запускаем сценария личныго кабинета: выводим данные
+        пользователя/сообщение о необходимости регистрации
+        + соответствующие inline-кнопки
 
-        user_id = message.from_user.id
-        user = state_manager.users.get(user_id, None)
+        Args:
+           - message(Message): объект сообщения от бота
+        """
+
+        chat_id = message.chat.id
+        user = state_manager.users.get(chat_id, None)
 
         if user:
             profile_text = await user.write_user_data()
@@ -58,7 +65,7 @@ class ProfileScene(Scene):
         кнопки "Изменить адрес электронной почты"(change_email)
 
         Args:
-            - callback(CallbackQuery): информация о нажатой кнопке
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
         await transition.remove_inline_keyboard_last_msg(message)
@@ -78,7 +85,7 @@ class ProfileScene(Scene):
         на AuthStates.change_email
 
         Args:
-            - message(Message): объект сообщения от пользователя
+            - message(Message): объект сообщения от бота
             - new_email(str): новый email пользователя
         """
         chat_id = message.chat.id

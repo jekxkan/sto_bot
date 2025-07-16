@@ -24,16 +24,24 @@ class SalesScene(Scene):
         """
         Получает данные о текущих акциях, формирует inline-клавиатуру
         для их просмотра
+        Поскольку данные формируются с задержкой, сначала отправляем
+        временное сообщение "Загрузка...", и когда данные сформировались
+        редактируем его, отображая данные акций
 
         Args:
-            - message(Message): объект сообщения
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 
         await transition.remove_inline_keyboard_last_msg(message)
+
         await message.answer(
             self.text,
             reply_markup=await create_back_to_menu_keyboard(),
+        )
+
+        temp_msg = await message.answer(
+            text='Загрузка...'
         )
 
         self.sales_info = await get_sales_data()
@@ -44,7 +52,7 @@ class SalesScene(Scene):
             page_quanity=self.sales_count)
 
         state_manager.users_last_bot_msg[chat_id] = \
-            await message.answer(
+            await temp_msg.edit_text(
                 text=await self._generate_sale_text(1),
                 reply_markup=buttons
             )
@@ -75,6 +83,7 @@ class SalesScene(Scene):
 
         Args:
             - sale_num(int): номер акции
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 

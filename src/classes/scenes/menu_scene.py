@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aiogram.types import Message, FSInputFile
 
 from keyboards.menu_keyboard import create_menu_keyboard
@@ -6,18 +8,14 @@ from classes.scene import Scene
 
 
 class MainMenu(Scene):
-    """
-    Главное меню наследует метод prepare_chat и атрибуты
-    класса BotManager
-    """
+
     def __init__(self):
-        """
-        Переопределяются атрибуты picture, text и inline_keyboard
-        """
         super().__init__()
-        self.picture = '../img/menu.jpg'
+        self.picture = str((Path(__file__).
+                            parent / '..' / '..' /
+                            '..' / 'img' / 'menu.jpg').resolve())
         self.text = ('Запишитесь на СТО Орбита уже\nсегодня и получите '
-                     'качетсвенное\nобслуживание вашего авто!\n'
+                     'качественное\nобслуживание вашего авто!\n'
                      'Просто выберите желаемую дату\nи время визита.\n\n'
                      'Режим работы:\n'
                      'Ежедневно с 9:00 до 21:00\n\n'
@@ -36,11 +34,11 @@ class MainMenu(Scene):
         Отправляет сообщение с главным меню по команде /start
 
         В конце записываем последнее отправленное
-        сообщение пользователю ботом в BotManager.last_msg
-        для отслеживания состояния чата
+        сообщение пользователю ботом в StateManager.users_last_msg
+        по id чата для отслеживания его состояния
 
         Args:
-            - message(Message): объект сообщения от пользователя
+            - message(Message): объект сообщения от бота
         """
         chat_id = message.chat.id
 
