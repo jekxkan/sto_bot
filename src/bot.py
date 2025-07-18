@@ -3,7 +3,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 
 from configs.environment import settings
-from configs.logger import logger
+from routers.errors import error_router
 from routers.main import router
 from routers.menu import menu_router
 from routers.profile import profile_router
@@ -16,15 +16,13 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 async def main():
-    try:
-        dp.include_routers(router,
-                           menu_router,
-                           profile_router,
-                           sales_router,
-                           registration_router)
-        await dp.start_polling(bot)
-    except Exception as e:
-        logger.error(e)
+    dp.include_routers(router,
+                       error_router,
+                       menu_router,
+                       profile_router,
+                       sales_router,
+                       registration_router)
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
@@ -41,10 +42,12 @@ class TransitionManager:
         # Поверяем есть ли у последнего сообщения кнопки, если да, то удаляем их
         chat_id = message.chat.id
         user_last_bot_msg = state_manager.users_last_bot_msg.get(chat_id, None)
-
-        if user_last_bot_msg.reply_markup is not None:
-            await (state_manager.users_last_bot_msg[chat_id].
-                   edit_reply_markup(reply_markup=None))
+        try:
+            if user_last_bot_msg.reply_markup is not None:
+                await (state_manager.users_last_bot_msg[chat_id].
+                       edit_reply_markup(reply_markup=None))
+        except TelegramBadRequest:
+            return
 
 
     async def return_menu_scene(self, message: Message):

@@ -19,7 +19,7 @@ class User:
 
         return (f'Ваши данные:\nИмя: {self.data["username"]}\n'
                 f'Тел.: {self.data["number"]}\n'
-                f'Электронная почта: {self.data["email"]}')
+                f'E-mail: {self.data["email"]}')
 
 
     async def change_email(self, new_email: str):

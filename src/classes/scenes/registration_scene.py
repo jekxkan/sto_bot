@@ -1,14 +1,18 @@
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup
+from pydantic import ValidationError
+from pydantic.v1 import EmailStr, EmailError
 
 from classes.transition import transition
 from classes.user import User
 from keyboards.main_keyboard import (create_step_back_button,
                                      create_back_to_menu_keyboard)
+from keyboards.profile_keyboard import create_change_email_button
 from keyboards.registration_keyboard import (create_getting_email_keyboard,
                                              create_gettting_number_keyboard)
 from classes.manager import state_manager
 from classes.scene import Scene
+from schemas.username import UsernameModel
 
 
 class RegistrationScene(Scene):
@@ -102,6 +106,12 @@ class RegistrationScene(Scene):
         await transition.remove_inline_keyboard_last_msg(message)
 
         email = message.text
+        try:
+            valid_email = EmailStr.validate(email)
+        except EmailError:
+            await message.answer("❌ Некорректный адрес электронной почты")
+            return
+
         data = await state.get_data()
         registration_data = data.get('registration_data', {})
         registration_data['email'] = email
@@ -145,6 +155,16 @@ class RegistrationScene(Scene):
         await transition.remove_inline_keyboard_last_msg(message)
 
         username = message.text
+
+        try:
+            valid_username = UsernameModel(username=username)
+        except ValidationError:
+            await message.answer(
+                text='❗️ Имя пользователя может содержать только кириллицу и '
+                     'быть не длиннее 32 символов'
+            )
+            return False
+
         data = await state.get_data()
         registration_data = data.get('registration_data', {})
         registration_data['username'] = username
@@ -162,7 +182,12 @@ class RegistrationScene(Scene):
         state_manager.users_last_bot_msg[chat_id] = \
             await message.answer(
                 text=f'Спасибо, что зарегистрировались!\n\n'
-                     f'{await state_manager.users[chat_id].write_user_data()}'
+                     f'{await state_manager.users[chat_id].write_user_data()}',
+                reply_markup=InlineKeyboardMarkup(
+                    inline_keyboard=
+                    [[await create_change_email_button()]])
             )
+
+        return True
 
 registration_scene = RegistrationScene()

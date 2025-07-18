@@ -1,4 +1,5 @@
 from aiogram.types import Message
+from pydantic.v1 import EmailStr, EmailError
 
 from classes.transition import transition
 from keyboards.main_keyboard import create_back_to_menu_keyboard
@@ -38,7 +39,7 @@ class ProfileScene(Scene):
             self.text = profile_text
             is_auth = True
         else:
-            profile_text = 'Вы еще не зарегистрированы в нашей системе'
+            profile_text = 'Вы еще не авторизованы в нашей системе'
             self.text = profile_text
             is_auth = False
 
@@ -76,7 +77,7 @@ class ProfileScene(Scene):
             )
 
 
-    async def confirm_new_email(self, message: Message,  new_email: str):
+    async def confirm_new_email(self, message: Message):
         """
         Подтверждаем редактирование email пользователем и вызываем
         у экземмпляра класса User метод обновления email.
@@ -87,9 +88,17 @@ class ProfileScene(Scene):
             - message(Message): объект сообщения от бота
             - new_email(str): новый email пользователя
         """
-        chat_id = message.chat.id
-
         await transition.remove_inline_keyboard_last_msg(message)
+
+        chat_id = message.chat.id
+        new_email = message.text.strip()
+
+        try:
+            valid_email = EmailStr.validate(new_email)
+        except EmailError:
+            await message.answer("❌ Некорректный адрес электронной почты")
+            return False
+
         await (state_manager.users[chat_id].
                change_email(new_email))
         state_manager.users_last_bot_msg[chat_id] = \
@@ -98,6 +107,8 @@ class ProfileScene(Scene):
                 f'{await state_manager.users[chat_id].write_user_data()}',
                 reply_markup=None
             )
+
+        return True
 
 
 profile = ProfileScene()

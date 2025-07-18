@@ -1,5 +1,4 @@
 from aiogram import Router
-from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -43,8 +42,7 @@ async def on_profile_callback(callback: CallbackQuery, state: FSMContext):
         await profile.start_scene(callback.message)
 
 
-@profile_router.callback_query(lambda x: x.data == "change_email",
-                               StateFilter(ProfileStates.authenticated))
+@profile_router.callback_query(lambda x: x.data == "change_email")
 async def on_change_email_callback(callback: CallbackQuery, state: FSMContext):
     """
     Обработчик callback-запроса "change_email" для изменения email
@@ -71,8 +69,9 @@ async def on_change_email_msg(message: Message, state: FSMContext):
         - message(Message): сообщение с новым email
         - state(FSMContext): контекст состояния
     """
-    new_email = message.text
-    await profile.confirm_new_email(message, new_email)
+    confirmation_status = await profile.confirm_new_email(message)
+    if not confirmation_status:
+        await profile.ask_new_email(message)
+        return
     await state.clear()
-    logger.info(f"Email изменён на {new_email}")
     logger.info("Состояние обнулилось")

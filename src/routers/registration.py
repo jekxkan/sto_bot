@@ -70,6 +70,13 @@ async def on_ask_email_message(message: Message, state: FSMContext):
         - state(FSMContext): состояние пользователя
     """
     await registration_scene.get_email(message, state)
+
+    data = await state.get_data()
+    registration_data = data.get('registration_data', {})
+    if 'email' not in registration_data:
+        await registration_scene.ask_email(message)
+        return
+
     await transition.add_and_set_state(state,
                                        RegistrationStates.sending_username)
     await registration_scene.ask_username(message)
@@ -90,6 +97,10 @@ async def on_username_message(message: Message, state: FSMContext):
         - message(Message): сообщение пользователя с именем
         - state(FSMContext): состояние пользователя
     """
-    await registration_scene.get_username(message, state)
+    validation_status = await (registration_scene.
+                               get_username(message, state))
+    if not validation_status:
+        await registration_scene.ask_username(message)
+        return
     await state.clear()
     logger.info('Состояние обнулилось')
