@@ -33,8 +33,7 @@ async def on_registrate_callback(callback: CallbackQuery, state: FSMContext):
     logger.info('Состояние: sending_number')
 
 
-@registration_router.message(F.content_type == ContentType.CONTACT,
-                             RegistrationStates.sending_number)
+@registration_router.message(RegistrationStates.sending_number)
 async def on_getting_number_message(message: Message, state: FSMContext):
     """
     Обработчик получения номера телефона пользователя
@@ -48,7 +47,11 @@ async def on_getting_number_message(message: Message, state: FSMContext):
         - message(Message): сообщение пользователя с контактом
         - state(FSMContext): состояние пользователя
     """
-    await registration_scene.get_number(message, state)
+    number = await registration_scene.get_number(message, state)
+    if not number:
+        await registration_scene.start_scene(message)
+        return
+
     await transition.add_and_set_state(state,
                                        RegistrationStates.sending_email)
     await registration_scene.ask_email(message)

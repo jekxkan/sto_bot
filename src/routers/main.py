@@ -23,6 +23,21 @@ async def on_main_menu_msg(message: Message, state: FSMContext):
     await state.clear()
 
 
+@router.callback_query(lambda x: x.data == 'back_to_menu')
+async def back_to_menu_callback(callback: CallbackQuery, state: FSMContext):
+    """
+    Обработчик нажатия на inline-кнопку "Главное меню"
+    Возвращает пользователя в главное меню и сбрасывает состояние
+
+    Args:
+        - callback(CallbackQuery): объект callback-запроса
+        - state(FSMContext): контекст состояния
+    """
+    logger.info('Пользователь вернулся в главное меню')
+    await transition.return_menu_scene(callback.message)
+    await state.clear()
+
+
 @router.callback_query(lambda x: x.data == "step_back")
 async def on_step_back_callback(callback: CallbackQuery, state: FSMContext):
     """

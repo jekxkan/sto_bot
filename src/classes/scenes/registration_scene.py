@@ -1,11 +1,14 @@
+import re
+
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, InlineKeyboardMarkup
+from aiogram.types import Message, InlineKeyboardMarkup, ReplyKeyboardRemove
 from pydantic import ValidationError
 from pydantic.v1 import EmailStr, EmailError
 
 from classes.transition import transition
 from classes.user import User
 from keyboards.main_keyboard import (create_step_back_button,
+                                     create_inline_back_to_menu_button,
                                      create_back_to_menu_keyboard)
 from keyboards.profile_keyboard import create_change_email_button
 from keyboards.registration_keyboard import (create_getting_email_keyboard,
@@ -61,9 +64,23 @@ class RegistrationScene(Scene):
             - message(Message): сообщение пользователя с контактами
             - state(FSMContext): контекст состояния
         """
+        PHONE_REGEX = re.compile(r'^\+7\d{10}$')
         await transition.remove_inline_keyboard_last_msg(message)
 
+        if not message.contact:
+            await message.answer(
+                "Пожалуйста, поделитель номером телефона с помощью кнопки"
+            )
+            return
+
         number = message.contact.phone_number
+        if not PHONE_REGEX.match(number):
+            await message.answer(
+                "Неверный формат номера. "
+                "Пожалуйста, используйте формат +7XXXXXXXXXX"
+            )
+            return
+
         await self.check_if_num_exists_in_1c(number)
 
         data = await state.get_data()
@@ -75,6 +92,8 @@ class RegistrationScene(Scene):
             text=f'Ваш номер: {number}',
             reply_markup=await create_back_to_menu_keyboard()
         )
+
+        return number
 
 
     async def ask_email(self, message: Message):
@@ -179,13 +198,18 @@ class RegistrationScene(Scene):
             'number': registration_data['number'],
         }
 
+        await message.answer(
+            text='Спасибо, что зарегистрировались!',
+            reply_markup=ReplyKeyboardRemove()
+        )
+
         state_manager.users_last_bot_msg[chat_id] = \
             await message.answer(
-                text=f'Спасибо, что зарегистрировались!\n\n'
-                     f'{await state_manager.users[chat_id].write_user_data()}',
+                text=f'{await state_manager.users[chat_id].write_user_data()}',
                 reply_markup=InlineKeyboardMarkup(
                     inline_keyboard=
-                    [[await create_change_email_button()]])
+                    [[await create_change_email_button()],
+                     [await create_inline_back_to_menu_button()]])
             )
 
         return True

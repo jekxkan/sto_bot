@@ -52,9 +52,14 @@ class ProfileScene(Scene):
         buttons = await create_profile_keyboard() if is_auth \
             else await create_unauth_profile_keyboard()
 
+        if is_auth:
+            text = 'Выберите дейтсвие:'
+        else:
+            text = 'Для авторизации необходимо выбрать действие:'
+
         state_manager.users_last_bot_msg[chat_id] = \
             await message.answer(
-                'Выберите действие:',
+                text,
                 reply_markup=buttons
             )
 

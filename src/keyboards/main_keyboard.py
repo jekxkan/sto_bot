@@ -1,6 +1,6 @@
 from typing import List
 
-from aiogram.types import InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
 
 
 async def create_back_to_menu_keyboard() -> ReplyKeyboardMarkup:
@@ -12,6 +12,16 @@ async def create_back_to_menu_keyboard() -> ReplyKeyboardMarkup:
     """
     return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='🏠 Главная')]],
                                resize_keyboard=True)
+
+
+async def create_inline_back_to_menu_button() -> InlineKeyboardButton:
+    """
+    Создает inline-кнопку для возрата в меню
+
+    Returns:
+        - InlineKeyboardButton: кнопка "Главное меню"
+    """
+    return InlineKeyboardButton(text='🏠 Главная', callback_data='back_to_menu')
 
 
 async def create_step_back_button() -> InlineKeyboardButton:
